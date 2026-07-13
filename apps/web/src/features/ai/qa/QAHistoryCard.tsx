@@ -26,7 +26,7 @@ export function QAHistoryCard({ entry }: { entry: QAHistoryEntry }) {
         </span>
       </div>
 
-      <p className="text-sm text-slate-700">{response.answer}</p>
+      <p className="text-sm whitespace-pre-line text-slate-700">{response.answer}</p>
 
       {response.highlights.length > 0 && (
         <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">

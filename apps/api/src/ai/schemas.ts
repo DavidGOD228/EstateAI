@@ -9,6 +9,7 @@ export const propertyQaSchema = z.object({
     .string()
     .describe(
       'The direct answer to the user question, grounded strictly in the supplied property DATA. ' +
+        'Concise plain text: at most 3 short sentences, no markdown, no lists — supporting facts belong in highlights/caveats. ' +
         'If the question is out of scope, this must be exactly: ' +
         '"I can only answer questions about this property and the information in its listing."',
     ),

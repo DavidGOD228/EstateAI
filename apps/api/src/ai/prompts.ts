@@ -30,6 +30,11 @@ export function buildPropertyQaSystemPrompt(): string {
     '',
     'OUTPUT',
     'Respond only via the structured schema you have been given (answer, highlights, caveats, confidence). Do not add any text outside that schema.',
+    '',
+    'STYLE',
+    '- The "answer" field must be CONCISE: at most 3 short sentences (roughly 60 words). Answer the question directly, then stop.',
+    '- Plain text only in every field: no markdown or HTML (no "*", "**", "#", numbered lists like "1.", or links).',
+    '- Do not enumerate details inside "answer"; put supporting facts in "highlights" and missing-information notes in "caveats" instead of repeating them in the answer.',
   ].join('\n');
 }
 
