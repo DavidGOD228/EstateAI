@@ -1,0 +1,24 @@
+{
+  "name": "@estateai/api",
+  "private": true,
+  "version": "0.1.0",
+  "description": "EstateAI backend (NestJS) - skeleton only until Phase 3",
+  "scripts": {
+    "dev": "echo \"[api] backend is implemented in Phase 3\"",
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo \"[api] lint is configured in Phase 3\""
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@estateai/shared-types": "workspace:*",
+    "@types/node": "^24.13.2",
+    "typescript": "~6.0.2"
+  }
+}
