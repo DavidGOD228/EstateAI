@@ -16,9 +16,7 @@
     "forceConsistentCasingInFileNames": true,
     "declaration": false,
     "sourceMap": true,
-    "paths": {
-      "@estateai/shared-types": ["../../packages/shared-types/src/index.ts"]
-    }
+    "strictPropertyInitialization": false
   },
   "include": ["src"]
 }

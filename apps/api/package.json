@@ -2,23 +2,49 @@
   "name": "@estateai/api",
   "private": true,
   "version": "0.1.0",
-  "description": "EstateAI backend (NestJS) - skeleton only until Phase 3",
+  "description": "EstateAI backend (NestJS + TypeORM + PostgreSQL + LangChain/Anthropic)",
   "scripts": {
-    "dev": "echo \"[api] backend is implemented in Phase 3\"",
+    "dev": "ts-node --transpile-only src/main.ts",
     "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "echo \"[api] lint is configured in Phase 3\""
+    "lint": "echo \"[api] lint via workspace oxlint is not configured; strict tsc is the gate\"",
+    "migration:run": "ts-node --transpile-only src/database/migrate.ts",
+    "seed": "ts-node --transpile-only src/database/seed.ts"
   },
   "dependencies": {
+    "@langchain/anthropic": "^1.0.0",
+    "@langchain/core": "^1.0.0",
     "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/passport": "^11.0.0",
     "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/swagger": "^11.0.0",
+    "@nestjs/throttler": "^6.3.0",
+    "@nestjs/typeorm": "^11.0.0",
+    "argon2": "^0.44.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "cookie-parser": "^1.4.7",
+    "helmet": "^8.0.0",
+    "joi": "^17.13.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "pg": "^8.13.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "swagger-ui-express": "^5.0.1",
+    "typeorm": "^0.3.20",
+    "zod": "^3.25.0"
   },
   "devDependencies": {
-    "@estateai/shared-types": "workspace:*",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/express": "^5.0.0",
     "@types/node": "^24.13.2",
+    "@types/passport-jwt": "^4.0.1",
+    "ts-node": "^10.9.2",
     "typescript": "~6.0.2"
   }
 }
