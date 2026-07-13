@@ -5,6 +5,7 @@
 import type {
   AskQuestionRequest,
   AskQuestionResponse,
+  CreatePropertyRequest,
   GenerateListingRequest,
   GenerateListingResponse,
   LoginRequest,
@@ -13,6 +14,8 @@ import type {
   PropertyListQuery,
   PropertyListResponse,
   RegisterRequest,
+  SearchPropertiesRequest,
+  SearchPropertiesResponse,
   UserDto,
 } from '@estateai/shared-types';
 import { request } from './client';
@@ -51,6 +54,10 @@ export function getProperty(id: string): Promise<PropertyDto> {
   return request<PropertyDto>(`/api/properties/${encodeURIComponent(id)}`);
 }
 
+export function createProperty(body: CreatePropertyRequest): Promise<PropertyDto> {
+  return request<PropertyDto>('/api/properties', { method: 'POST', body });
+}
+
 // ---- AI ----
 
 export function askProperty(id: string, body: AskQuestionRequest): Promise<AskQuestionResponse> {
@@ -62,4 +69,10 @@ export function askProperty(id: string, body: AskQuestionRequest): Promise<AskQu
 
 export function generateListing(body: GenerateListingRequest): Promise<GenerateListingResponse> {
   return request<GenerateListingResponse>('/api/ai/generate-listing', { method: 'POST', body });
+}
+
+export function searchProperties(
+  body: SearchPropertiesRequest,
+): Promise<SearchPropertiesResponse> {
+  return request<SearchPropertiesResponse>('/api/ai/search-properties', { method: 'POST', body });
 }

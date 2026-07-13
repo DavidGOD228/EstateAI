@@ -19,6 +19,7 @@ export function makeProperty(overrides: Partial<Property> = {}): Property {
     areaSqm: 68,
     propertyType: 'apartment',
     features: ['balcony', 'parking'],
+    ownerId: null,
     createdAt: now,
     updatedAt: now,
     ...overrides,

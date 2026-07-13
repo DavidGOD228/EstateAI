@@ -15,7 +15,7 @@ beforeEach(() => {
 });
 
 describe('Header auth gating', () => {
-  it('hides the Generate link and shows Log in / Sign up when unauthenticated', () => {
+  it('hides the Create link and shows Log in / Sign up when unauthenticated', () => {
     (useAuth as Mock).mockReturnValue({ status: 'unauthenticated', user: null });
 
     render(
@@ -24,12 +24,12 @@ describe('Header auth gating', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.queryByRole('link', { name: 'Generate' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Create' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Log in' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Sign up' })).toBeInTheDocument();
   });
 
-  it('shows the Generate link when authenticated', () => {
+  it('shows the Create link when authenticated', () => {
     (useAuth as Mock).mockReturnValue({
       status: 'authenticated',
       user: { id: 'u1', name: 'Jane Doe', email: 'jane@example.com', createdAt: '2024-01-01T00:00:00.000Z' },
@@ -41,13 +41,13 @@ describe('Header auth gating', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('link', { name: 'Generate' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Create' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Log in' })).not.toBeInTheDocument();
   });
 });
 
 describe('PromoBanner auth gating', () => {
-  it('invites unauthenticated visitors to log in to generate', () => {
+  it('invites unauthenticated visitors to log in to create', () => {
     (useAuth as Mock).mockReturnValue({ status: 'unauthenticated', user: null });
 
     render(
@@ -56,11 +56,11 @@ describe('PromoBanner auth gating', () => {
       </MemoryRouter>,
     );
 
-    const cta = screen.getByRole('link', { name: 'Log in to generate' });
+    const cta = screen.getByRole('link', { name: 'Log in to create' });
     expect(cta).toHaveAttribute('href', '/login');
   });
 
-  it('offers authenticated users the generator directly', () => {
+  it('offers authenticated users the create page directly', () => {
     (useAuth as Mock).mockReturnValue({
       status: 'authenticated',
       user: { id: 'u1', name: 'Jane Doe', email: 'jane@example.com', createdAt: '2024-01-01T00:00:00.000Z' },
@@ -72,7 +72,7 @@ describe('PromoBanner auth gating', () => {
       </MemoryRouter>,
     );
 
-    const cta = screen.getByRole('link', { name: 'Try the generator' });
-    expect(cta).toHaveAttribute('href', '/generate');
+    const cta = screen.getByRole('link', { name: 'Create a listing' });
+    expect(cta).toHaveAttribute('href', '/create');
   });
 });

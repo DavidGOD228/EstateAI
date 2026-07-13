@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PROPERTY_TYPES } from './property-query.dto';
 import { Property, PropertyType } from '../property.entity';
 
@@ -45,9 +45,21 @@ export class PropertyResponseDto {
 
   @ApiProperty({ description: 'ISO 8601' })
   updatedAt: string;
+
+  @ApiPropertyOptional({
+    description:
+      'True only when the requester is authenticated AND owns this listing. The owner\'s identity is never exposed to other users.',
+  })
+  isOwn?: boolean;
 }
 
-export function toPropertyResponse(property: Property): PropertyResponseDto {
+/**
+ * `currentUserId` is the id of the requester if authenticated (from
+ * `JwtAuthGuard`/`OptionalJwtAuthGuard`), else `null`/`undefined` for
+ * anonymous requests. `ownerId` itself is intentionally never included in
+ * the returned shape — only the derived `isOwn` boolean is.
+ */
+export function toPropertyResponse(property: Property, currentUserId?: string | null): PropertyResponseDto {
   return {
     id: property.id,
     title: property.title,
@@ -63,5 +75,6 @@ export function toPropertyResponse(property: Property): PropertyResponseDto {
     features: property.features ?? [],
     createdAt: property.createdAt.toISOString(),
     updatedAt: property.updatedAt.toISOString(),
+    isOwn: currentUserId != null && property.ownerId === currentUserId,
   };
 }

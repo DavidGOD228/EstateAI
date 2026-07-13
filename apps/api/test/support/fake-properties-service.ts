@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import { CreatePropertyDto } from '../../src/properties/dto/create-property.dto';
 import { Property } from '../../src/properties/property.entity';
 import { PropertyFilters } from '../../src/properties/property-filters.interface';
 import { PropertyPage } from '../../src/properties/properties.service';
@@ -43,5 +45,24 @@ export class FakePropertiesService {
 
     items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     return { items, total: items.length };
+  }
+
+  async create(dto: CreatePropertyDto, ownerId: string): Promise<Property> {
+    const now = new Date();
+    const property = new Property();
+    Object.assign(property, {
+      ...dto,
+      id: randomUUID(),
+      externalRef: `user-${randomUUID()}`,
+      ownerId,
+      createdAt: now,
+      updatedAt: now,
+    });
+    this.rows.push(property);
+    return property;
+  }
+
+  async findRecent(limit: number): Promise<Property[]> {
+    return [...this.rows].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, limit);
   }
 }

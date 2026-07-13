@@ -72,6 +72,16 @@ export class Property {
   @Column({ type: 'simple-array', nullable: true })
   features: string[];
 
+  /**
+   * Owning user id for user-created listings (POST /api/properties).
+   * NULL for all seeded rows. FK -> users(id) ON DELETE SET NULL: deleting
+   * the owning user detaches the listing rather than deleting it. Never
+   * serialized in API responses — see `toPropertyResponse`'s `isOwn` mapping.
+   */
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  ownerId: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 

@@ -8,6 +8,7 @@ import * as api from '../shared/api/endpoints';
 import { ApiError } from '../shared/api/client';
 import { EmptyState } from '../shared/components/EmptyState';
 import { ErrorState } from '../shared/components/ErrorState';
+import { OwnListingBadge } from '../shared/components/OwnListingBadge';
 import { Skeleton } from '../shared/components/Skeleton';
 
 type LoadState =
@@ -104,8 +105,21 @@ function PropertyDetailsSkeleton() {
 }
 
 function PropertyDetailsContent({ property }: { property: PropertyDto }) {
-  const { id, title, description, price, address, city, country, bedrooms, bathrooms, areaSqm, propertyType, features } =
-    property;
+  const {
+    id,
+    title,
+    description,
+    price,
+    address,
+    city,
+    country,
+    bedrooms,
+    bathrooms,
+    areaSqm,
+    propertyType,
+    features,
+    isOwn,
+  } = property;
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:items-start">
@@ -113,7 +127,10 @@ function PropertyDetailsContent({ property }: { property: PropertyDto }) {
         <PropertyImagePlaceholder propertyType={propertyType} className="aspect-[16/9] w-full rounded-xl" />
 
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
+          <div className="flex items-center gap-2">
+            {isOwn && <OwnListingBadge />}
+            <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
+          </div>
           <p className="mt-1 text-sm text-slate-500">
             {address}, {city}, {country}
           </p>

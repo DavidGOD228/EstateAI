@@ -216,4 +216,114 @@ describe('AI endpoints (e2e)', () => {
       expect(response.body).not.toHaveProperty('stack');
     });
   });
+
+  describe('POST /api/ai/search-properties', () => {
+    it('returns 401 when no session cookie is sent', async () => {
+      const response = await request(app.getHttpServer()).post('/api/ai/search-properties').send({ query: 'bright flat near a park' });
+
+      expect(response.status).toBe(401);
+    });
+
+    it('returns 400 for a 1-char query', async () => {
+      const { cookie } = await seedAuthenticatedUser(ctx);
+
+      const response = await request(app.getHttpServer()).post('/api/ai/search-properties').set('Cookie', cookie).send({ query: 'a' });
+
+      expect(response.status).toBe(400);
+      expect(ctx.aiProvider.generate).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 for a 301-char query', async () => {
+      const { cookie } = await seedAuthenticatedUser(ctx);
+
+      const response = await request(app.getHttpServer())
+        .post('/api/ai/search-properties')
+        .set('Cookie', cookie)
+        .send({ query: 'a'.repeat(301) });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('returns 200 with ranked matches + reasons + summary for the mocked happy path', async () => {
+      const { cookie } = await seedAuthenticatedUser(ctx);
+      const propertyA = makeProperty({ title: 'Bright flat near Kadriorg park' });
+      const propertyB = makeProperty({ title: 'Family house near Pirita beach' });
+      ctx.propertiesService.seed([propertyA, propertyB]);
+      ctx.aiProvider.generate.mockResolvedValue({
+        matches: [
+          { propertyId: propertyA.id, reason: 'Close to a park and bright, matching the query.' },
+          { propertyId: propertyB.id, reason: 'Spacious family home near the beach.' },
+        ],
+        summary: 'Two listings match your search, ranked by relevance.',
+      });
+
+      const response = await request(app.getHttpServer())
+        .post('/api/ai/search-properties')
+        .set('Cookie', cookie)
+        .send({ query: 'bright flat near a park for a family' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.matches).toHaveLength(2);
+      expect(response.body.matches[0].property.id).toBe(propertyA.id);
+      expect(response.body.matches[0].reason).toBe('Close to a park and bright, matching the query.');
+      expect(response.body.matches[1].property.id).toBe(propertyB.id);
+      expect(response.body.summary).toBe('Two listings match your search, ranked by relevance.');
+      expect(response.body.matches[0].property).not.toHaveProperty('ownerId');
+    });
+
+    it('silently drops a hallucinated propertyId mixed in with a real one', async () => {
+      const { cookie } = await seedAuthenticatedUser(ctx);
+      const property = makeProperty();
+      ctx.propertiesService.seed([property]);
+      ctx.aiProvider.generate.mockResolvedValue({
+        matches: [
+          { propertyId: 'not-a-real-id', reason: 'Hallucinated match.' },
+          { propertyId: property.id, reason: 'A genuine match.' },
+        ],
+        summary: 'One listing matches your search.',
+      });
+
+      const response = await request(app.getHttpServer())
+        .post('/api/ai/search-properties')
+        .set('Cookie', cookie)
+        .send({ query: 'a cosy apartment' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.matches).toHaveLength(1);
+      expect(response.body.matches[0].property.id).toBe(property.id);
+    });
+
+    it('returns 503 with the generic message when the provider times out', async () => {
+      const { cookie } = await seedAuthenticatedUser(ctx);
+      ctx.propertiesService.seed([makeProperty()]);
+      ctx.aiProvider.generate.mockRejectedValue(new AiTimeoutError());
+
+      const response = await request(app.getHttpServer())
+        .post('/api/ai/search-properties')
+        .set('Cookie', cookie)
+        .send({ query: 'a cosy apartment' });
+
+      expect(response.status).toBe(503);
+      expect(response.body.message).toBe(AI_UNAVAILABLE_MESSAGE);
+      expect(response.body).not.toHaveProperty('stack');
+    });
+
+    it('returns 200 with an empty matches array for an off-topic mocked response', async () => {
+      const { cookie } = await seedAuthenticatedUser(ctx);
+      ctx.propertiesService.seed([makeProperty()]);
+      ctx.aiProvider.generate.mockResolvedValue({
+        matches: [],
+        summary: 'I can only search these property listings.',
+      });
+
+      const response = await request(app.getHttpServer())
+        .post('/api/ai/search-properties')
+        .set('Cookie', cookie)
+        .send({ query: 'what is the capital of France?' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.matches).toEqual([]);
+      expect(response.body.summary).toBe('I can only search these property listings.');
+    });
+  });
 });

@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
-// The generator CTA is shown only to authenticated users; visitors are
-// invited to log in instead (the /generate route is protected anyway).
+// The create CTA is shown only to authenticated users; visitors are
+// invited to log in instead (the /create route is protected anyway).
 export function PromoBanner() {
   const { status } = useAuth();
 
@@ -23,11 +23,11 @@ export function PromoBanner() {
         </p>
       </div>
       <Link
-        to={authenticated ? '/generate' : '/login'}
-        state={authenticated ? undefined : { from: '/generate' }}
+        to={authenticated ? '/create' : '/login'}
+        state={authenticated ? undefined : { from: '/create' }}
         className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
       >
-        {authenticated ? 'Try the generator' : 'Log in to generate'}
+        {authenticated ? 'Create a listing' : 'Log in to create'}
       </Link>
     </div>
   );

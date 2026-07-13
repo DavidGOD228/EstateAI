@@ -8,8 +8,17 @@ import {
   buildGenerateListingUserMessage,
   buildPropertyQaSystemPrompt,
   buildPropertyQaUserMessage,
+  buildSearchPropertiesSystemPrompt,
+  buildSearchPropertiesUserMessage,
 } from './prompts';
-import { listingSchema, ListingResult, propertyQaSchema, PropertyQaResult } from './schemas';
+import {
+  listingSchema,
+  ListingResult,
+  propertyQaSchema,
+  PropertyQaResult,
+  searchPropertiesSchema,
+  SearchPropertiesResult,
+} from './schemas';
 
 const AI_UNAVAILABLE_MESSAGE = 'The AI assistant is currently unavailable. Please try again later.';
 
@@ -43,6 +52,19 @@ export class AiService {
     });
 
     return this.generateSafely(listingSchema, system, user);
+  }
+
+  /**
+   * Ranks the supplied candidate properties against a free-text query.
+   * Returns the raw (schema-validated) model output only — the caller
+   * (`SearchPropertiesController`) is responsible for re-validating
+   * `propertyId` against the candidate set and mapping to full DTOs.
+   */
+  async searchProperties(candidates: Property[], query: string): Promise<SearchPropertiesResult> {
+    const system = buildSearchPropertiesSystemPrompt();
+    const user = buildSearchPropertiesUserMessage(candidates, query);
+
+    return this.generateSafely(searchPropertiesSchema, system, user);
   }
 
   private async generateSafely<T extends Record<string, unknown>>(schema: z.ZodType<T>, system: string, user: string): Promise<T> {

@@ -1,10 +1,12 @@
 import { Link } from 'react-router-dom';
 import type { PropertyDto } from '@estateai/shared-types';
+import { OwnListingBadge } from '../../shared/components/OwnListingBadge';
 import { PropertyImagePlaceholder } from './PropertyImagePlaceholder';
 import { formatPrice } from './formatPrice';
 
 export function PropertyCard({ property }: { property: PropertyDto }) {
-  const { id, title, city, address, price, bedrooms, bathrooms, areaSqm, propertyType, features } = property;
+  const { id, title, city, address, price, bedrooms, bathrooms, areaSqm, propertyType, features, isOwn } =
+    property;
 
   return (
     <Link
@@ -15,9 +17,12 @@ export function PropertyCard({ property }: { property: PropertyDto }) {
       <PropertyImagePlaceholder propertyType={propertyType} className="aspect-[4/3] w-full" />
       <div className="flex flex-1 flex-col gap-2 p-4">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="line-clamp-2 text-sm font-semibold text-slate-900 group-hover:text-emerald-700">
-            {title}
-          </h3>
+          <div className="flex min-w-0 items-center gap-1.5">
+            {isOwn && <OwnListingBadge />}
+            <h3 className="line-clamp-2 text-sm font-semibold text-slate-900 group-hover:text-emerald-700">
+              {title}
+            </h3>
+          </div>
           <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-slate-600">
             {propertyType}
           </span>

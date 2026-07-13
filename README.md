@@ -124,10 +124,12 @@ All endpoints are mounted under `/api`. Every error response shares one shape:
 | POST | `/api/auth/login` | — | Log in; sets the session cookie; generic error on failure |
 | POST | `/api/auth/logout` | Cookie | Clears the session cookie |
 | GET | `/api/auth/me` | Cookie | Returns the current authenticated user |
-| GET | `/api/properties` | — | List properties with optional `location`, `propertyType`, `minBedrooms`, `maxPrice` filters |
+| GET | `/api/properties` | — | List properties with optional `location`, `propertyType`, `minBedrooms`, `maxPrice` filters; `isOwn` is computed when a session cookie is present |
 | GET | `/api/properties/:id` | — | Property details by id |
+| POST | `/api/properties` | Cookie | Publish a user-created listing (marked `isOwn: true` for its owner) |
 | POST | `/api/properties/:id/ask` | Cookie | Property Q&A: ask a question about one listing |
 | POST | `/api/ai/generate-listing` | Cookie | Smart Listing Generator: generate marketing copy from a form |
+| POST | `/api/ai/search-properties` | Cookie | AI contextual search: rank current listings against a free-text query |
 
 "Cookie" means the request must carry a valid `eai_session` HttpOnly session cookie (enforced by a backend guard,
 not just hidden in the UI); anonymous requests get `401`.
@@ -150,7 +152,7 @@ EstateAI/
 ├── apps/
 │   ├── web/                      # React + Vite + TypeScript + Tailwind
 │   │   └── src/
-│   │       ├── routes/            # HomePage, PropertyDetailsPage, GeneratePage,
+│   │       ├── routes/            # HomePage, PropertyDetailsPage, CreatePage,
 │   │       │                      # LoginPage, RegisterPage, ProfilePage, NotFoundPage
 │   │       ├── features/
 │   │       │   ├── auth/          # AuthContext, ProtectedRoute, login/register forms
@@ -215,9 +217,9 @@ Response shape:
 }
 ```
 
-### Smart Listing Generator
+### Smart Listing Generator (Create flow)
 
-On `/generate`, an authenticated user fills a structured form (location, price, bedrooms, bathrooms, area,
+On `/create`, an authenticated user fills a structured form (location, price, bedrooms, bathrooms, area,
 property type, optional free-text features, optional tone) and receives polished marketing copy. The optional
 free-text field is explicitly treated as untrusted content in the prompt — it may be mentioned, but embedded
 instructions inside it are ignored. The model is instructed to avoid inventing facts (schools, transport, crime
@@ -235,8 +237,21 @@ Response shape:
 }
 ```
 
-Both features return plain text only (no HTML/markdown) and are never persisted — history for Property Q&A lives
-only in React state for the current session, and generated listings are copyable but not auto-saved.
+After generation, the draft is editable (title, description, feature tags, and the remaining listing fields) and
+can be published with `POST /api/properties`. Published listings appear in the shared grid for everyone and carry
+a star badge ("Your listing") for their owner; ownership is stored server-side and the owner's identity is never
+exposed to other users.
+
+### AI contextual search
+
+On the listings page, an authenticated user can describe what they are looking for in free text (for example
+"bright renovated apartment near a park"). The backend loads up to 50 recent listings from PostgreSQL, asks the
+model to rank at most 6 matches with a one-sentence reason each, and validates that every returned id belongs to
+the candidate set (hallucinated ids are dropped). Off-topic queries return an empty match list with an explanatory
+summary. The endpoint shares the same auth guard, rate limit, and 503-on-failure behavior as the other AI features.
+
+All AI features return plain text only (no HTML/markdown). Q&A history and search results live only in React state
+for the current session; generated listings are persisted only when the user explicitly publishes them.
 
 ---
 

@@ -1,7 +1,23 @@
 import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
+import { CreatePropertyDto } from '../../src/properties/dto/create-property.dto';
 import { createTestApp, TestAppContext } from '../support/build-test-app';
+import { seedAuthenticatedUser } from '../support/auth-helpers';
 import { makeProperty } from '../support/fixtures';
+
+const validCreateBody: CreatePropertyDto = {
+  title: 'Bright two-bedroom flat',
+  description: 'A bright, recently renovated flat close to the park.',
+  price: 245000,
+  address: 'Weizenbergi 12',
+  city: 'Tallinn',
+  country: 'Estonia',
+  bedrooms: 2,
+  bathrooms: 1,
+  areaSqm: 68,
+  propertyType: 'apartment',
+  features: ['Balcony', 'Parking'],
+};
 
 describe('Properties (e2e)', () => {
   let ctx: TestAppContext;
@@ -14,6 +30,7 @@ describe('Properties (e2e)', () => {
 
   afterEach(() => {
     ctx.propertiesService.clear();
+    ctx.usersRepo.clear();
   });
 
   afterAll(async () => {
@@ -83,6 +100,94 @@ describe('Properties (e2e)', () => {
       expect(response.status).toBe(200);
       expect(response.body.id).toBe(property.id);
       expect(response.body).not.toHaveProperty('externalRef');
+    });
+  });
+
+  describe('POST /api/properties', () => {
+    it('returns 401 when no session cookie is sent', async () => {
+      const response = await request(app.getHttpServer()).post('/api/properties').send(validCreateBody);
+
+      expect(response.status).toBe(401);
+    });
+
+    it.each([
+      ['missing title', (() => { const { title: _title, ...rest } = validCreateBody; return rest; })()],
+      ['non-positive price', { ...validCreateBody, price: 0 }],
+      ['11 features', { ...validCreateBody, features: Array.from({ length: 11 }, (_, i) => `feature-${i}`) }],
+    ])('returns 400 for an invalid body (%s)', async (_label, body) => {
+      const { cookie } = await seedAuthenticatedUser(ctx);
+
+      const response = await request(app.getHttpServer()).post('/api/properties').set('Cookie', cookie).send(body);
+
+      expect(response.status).toBe(400);
+    });
+
+    it('returns 201 with the created property, isOwn: true, and no ownerId/externalRef leak', async () => {
+      const { user, cookie } = await seedAuthenticatedUser(ctx);
+
+      const response = await request(app.getHttpServer()).post('/api/properties').set('Cookie', cookie).send(validCreateBody);
+
+      expect(response.status).toBe(201);
+      expect(response.body.isOwn).toBe(true);
+      expect(response.body.title).toBe(validCreateBody.title);
+      expect(response.body).not.toHaveProperty('externalRef');
+      expect(response.body).not.toHaveProperty('ownerId');
+      expect(user.id).toBeTruthy();
+    });
+  });
+
+  describe('isOwn on GET /api/properties and GET /api/properties/:id', () => {
+    it('GET /api/properties shows isOwn true on the owner\'s own item and falsy on seeded ones, for the owner', async () => {
+      const { user, cookie } = await seedAuthenticatedUser(ctx, { email: 'owner@example.com' });
+      const seeded = makeProperty({ ownerId: null });
+      const ownItem = await ctx.propertiesService.create(validCreateBody, user.id);
+      ctx.propertiesService.seed([seeded, ownItem]);
+
+      const response = await request(app.getHttpServer()).get('/api/properties').set('Cookie', cookie);
+
+      expect(response.status).toBe(200);
+      const own = response.body.items.find((item: { id: string }) => item.id === ownItem.id);
+      const other = response.body.items.find((item: { id: string }) => item.id === seeded.id);
+      expect(own.isOwn).toBe(true);
+      expect(other.isOwn).toBeFalsy();
+      expect(response.body.items.every((item: Record<string, unknown>) => !('ownerId' in item))).toBe(true);
+    });
+
+    it('GET as another authenticated user shows falsy isOwn and never an ownerId key', async () => {
+      const { user: owner } = await seedAuthenticatedUser(ctx, { email: 'owner2@example.com' });
+      const { cookie: otherCookie } = await seedAuthenticatedUser(ctx, { email: 'other@example.com' });
+      const ownItem = await ctx.propertiesService.create(validCreateBody, owner.id);
+      ctx.propertiesService.seed([ownItem]);
+
+      const response = await request(app.getHttpServer()).get(`/api/properties/${ownItem.id}`).set('Cookie', otherCookie);
+
+      expect(response.status).toBe(200);
+      expect(response.body.isOwn).toBeFalsy();
+      expect(response.body).not.toHaveProperty('ownerId');
+    });
+
+    it('GET with a garbage/invalid session cookie still returns 200 (OptionalJwtAuthGuard never throws)', async () => {
+      const property = makeProperty();
+      ctx.propertiesService.seed([property]);
+
+      const response = await request(app.getHttpServer()).get('/api/properties').set('Cookie', 'eai_session=not-a-real-jwt');
+
+      expect(response.status).toBe(200);
+      expect(response.body.items[0].isOwn).toBeFalsy();
+    });
+
+    it('GET unauthenticated shows falsy isOwn and never an ownerId key', async () => {
+      const { user: owner } = await seedAuthenticatedUser(ctx, { email: 'owner3@example.com' });
+      const ownItem = await ctx.propertiesService.create(validCreateBody, owner.id);
+      ctx.propertiesService.seed([ownItem]);
+
+      const listResponse = await request(app.getHttpServer()).get('/api/properties');
+      const detailResponse = await request(app.getHttpServer()).get(`/api/properties/${ownItem.id}`);
+
+      expect(listResponse.body.items[0].isOwn).toBeFalsy();
+      expect(listResponse.body.items[0]).not.toHaveProperty('ownerId');
+      expect(detailResponse.body.isOwn).toBeFalsy();
+      expect(detailResponse.body).not.toHaveProperty('ownerId');
     });
   });
 });

@@ -28,8 +28,8 @@ export function Header() {
             Browse
           </NavLink>
           {status === 'authenticated' && (
-            <NavLink to="/generate" className={navClass}>
-              Generate
+            <NavLink to="/create" className={navClass}>
+              Create
             </NavLink>
           )}
         </nav>

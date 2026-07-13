@@ -58,3 +58,31 @@ export const listingSchema = z.object({
 });
 
 export type ListingResult = z.infer<typeof listingSchema>;
+
+/**
+ * Structured output contract for the Contextual Property Search feature.
+ * `propertyId` values are re-validated server-side against the candidate
+ * set (see AiService/SearchPropertiesController) before ever reaching a
+ * client — this schema only guarantees shape, not membership.
+ */
+export const searchPropertiesSchema = z.object({
+  matches: z
+    .array(
+      z.object({
+        propertyId: z
+          .string()
+          .describe('The id of a matching property, copied exactly from the CANDIDATE LISTINGS supplied in the prompt. Never invent an id.'),
+        reason: z
+          .string()
+          .describe('One short plain-text sentence explaining why this listing matches the query. No markdown.'),
+      }),
+    )
+    .describe('Ranked best-first matches, at most 6 items. Empty array when nothing matches or the query is out of scope.'),
+  summary: z
+    .string()
+    .describe(
+      'One or two plain-text sentences summarizing the results, or explaining why there are no matches / the query is out of scope. No markdown.',
+    ),
+});
+
+export type SearchPropertiesResult = z.infer<typeof searchPropertiesSchema>;

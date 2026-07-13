@@ -4,6 +4,7 @@ import { Property } from '../properties/property.entity';
 import { User } from '../users/user.entity';
 import { loadEnvIfMissing } from './env-loader';
 import { Init1731500000000 } from './migrations/1731500000000-init';
+import { AddOwnerToProperties1731600000000 } from './migrations/1731600000000-add-owner-to-properties';
 
 loadEnvIfMissing();
 
@@ -22,7 +23,7 @@ export const AppDataSource = new DataSource({
   type: 'postgres',
   url: databaseUrl,
   entities: [User, Property],
-  migrations: [Init1731500000000],
+  migrations: [Init1731500000000, AddOwnerToProperties1731600000000],
   synchronize: false,
   logging: false,
 });

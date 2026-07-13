@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Mock } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import type { PropertyDto } from '@estateai/shared-types';
+import type { PropertyDto, SearchPropertiesResponse, UserDto } from '@estateai/shared-types';
 import { ApiError } from '../shared/api/client';
 import { AuthProvider } from '../features/auth/AuthContext';
 import { HomePage } from './HomePage';
@@ -15,6 +15,8 @@ vi.mock('../shared/api/endpoints', () => ({
   logout: vi.fn(),
   askProperty: vi.fn(),
   generateListing: vi.fn(),
+  createProperty: vi.fn(),
+  searchProperties: vi.fn(),
 }));
 
 import * as api from '../shared/api/endpoints';
@@ -38,6 +40,13 @@ function makeProperty(overrides: Partial<PropertyDto> = {}): PropertyDto {
     ...overrides,
   };
 }
+
+const AUTH_USER: UserDto = {
+  id: 'u1',
+  name: 'Jane Doe',
+  email: 'jane@example.com',
+  createdAt: '2024-01-01T00:00:00.000Z',
+};
 
 function renderHomePage() {
   return render(
@@ -92,5 +101,64 @@ describe('HomePage', () => {
     renderHomePage();
 
     expect(await screen.findByText('No properties match your filters')).toBeInTheDocument();
+  });
+
+  it('shows the "Your listing" star badge only for properties the user owns', async () => {
+    const items = [
+      makeProperty({ id: 'own', title: 'My Own Place', isOwn: true }),
+      makeProperty({ id: 'other', title: 'Another Listing', isOwn: false }),
+    ];
+    (api.getProperties as Mock).mockResolvedValue({ items, total: 2 });
+
+    renderHomePage();
+
+    await screen.findByText('My Own Place');
+
+    const ownCard = screen.getByText('My Own Place').closest('a');
+    const otherCard = screen.getByText('Another Listing').closest('a');
+
+    expect(ownCard?.querySelector('[title="Your listing"]')).not.toBeNull();
+    expect(otherCard?.querySelector('[title="Your listing"]')).toBeNull();
+  });
+});
+
+describe('HomePage AI search', () => {
+  it('replaces the grid with ranked AI matches and restores it on clear', async () => {
+    (api.getMe as Mock).mockResolvedValue(AUTH_USER);
+    (api.getProperties as Mock).mockResolvedValue({ items: [makeProperty()], total: 1 });
+
+    const match = makeProperty({ id: 'match-1', title: 'Bright Family Flat' });
+    const response: SearchPropertiesResponse = {
+      matches: [{ property: match, reason: 'Close to a park and has 2 bedrooms.' }],
+      summary: 'Found 1 great match for a family-friendly flat.',
+    };
+    (api.searchProperties as Mock).mockResolvedValue(response);
+
+    renderHomePage();
+
+    await screen.findByText('Sunny 2BR in Kadriorg');
+
+    const input = await screen.findByLabelText('AI search');
+    fireEvent.change(input, { target: { value: 'bright flat near a park for a family' } });
+    fireEvent.click(screen.getByRole('button', { name: /Search with AI/ }));
+
+    expect(await screen.findByText('Bright Family Flat')).toBeInTheDocument();
+    expect(screen.getByText('Found 1 great match for a family-friendly flat.')).toBeInTheDocument();
+    expect(screen.getByText(/Close to a park and has 2 bedrooms\./)).toBeInTheDocument();
+    expect(api.searchProperties).toHaveBeenCalledWith({
+      query: 'bright flat near a park for a family',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear AI search' }));
+
+    expect(screen.queryByText('Bright Family Flat')).not.toBeInTheDocument();
+    expect(screen.getByText('Sunny 2BR in Kadriorg')).toBeInTheDocument();
+  });
+
+  it('shows a login hint instead of the search form when unauthenticated', async () => {
+    renderHomePage();
+
+    expect(await screen.findByText('to use AI search.')).toBeInTheDocument();
+    expect(screen.queryByLabelText('AI search')).not.toBeInTheDocument();
   });
 });

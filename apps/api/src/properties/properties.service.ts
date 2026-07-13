@@ -1,6 +1,8 @@
+import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CreatePropertyDto } from './dto/create-property.dto';
 import { PropertyFilters } from './property-filters.interface';
 import { Property } from './property.entity';
 
@@ -45,5 +47,24 @@ export class PropertiesService {
 
     const [items, total] = await qb.getManyAndCount();
     return { items, total };
+  }
+
+  /**
+   * POST /api/properties: publishes a user-created listing. `externalRef`
+   * is generated here (not user-supplied) since the column is unique and
+   * seeded rows use a different naming scheme entirely.
+   */
+  async create(dto: CreatePropertyDto, ownerId: string): Promise<Property> {
+    const property = this.propertiesRepository.create({
+      ...dto,
+      externalRef: `user-${randomUUID()}`,
+      ownerId,
+    });
+    return this.propertiesRepository.save(property);
+  }
+
+  /** Candidate pool for AI contextual search: most recent listings, capped. */
+  async findRecent(limit: number): Promise<Property[]> {
+    return this.propertiesRepository.find({ order: { createdAt: 'DESC' }, take: limit });
   }
 }

@@ -7,6 +7,7 @@ import { AI_PROVIDER } from './ai-provider.interface';
 import { AnthropicAiProvider } from './anthropic.provider';
 import { AskController } from './ask.controller';
 import { GenerateListingController } from './generate-listing.controller';
+import { SearchPropertiesController } from './search-properties.controller';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { GenerateListingController } from './generate-listing.controller';
       inject: [ConfigService],
     }),
   ],
-  controllers: [AskController, GenerateListingController],
+  controllers: [AskController, GenerateListingController, SearchPropertiesController],
   providers: [
     AiService,
     {

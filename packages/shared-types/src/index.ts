@@ -78,6 +78,12 @@ export interface PropertyDto {
   createdAt: string;
   /** ISO 8601 */
   updatedAt: string;
+  /**
+   * True only when the requester is authenticated AND owns this listing
+   * (user-created via POST /api/properties). Omitted/false otherwise.
+   * The owner's identity is never exposed to other users.
+   */
+  isOwn?: boolean;
 }
 
 export interface PropertyListQuery {
@@ -91,6 +97,35 @@ export interface PropertyListQuery {
 export interface PropertyListResponse {
   items: PropertyDto[];
   total: number;
+}
+
+/**
+ * POST /api/properties (authenticated) — publish a user-created listing.
+ * Typically pre-filled from the Smart Listing Generator output and then
+ * manually edited before publishing. Response: PropertyDto (isOwn: true).
+ */
+export interface CreatePropertyRequest {
+  /** 1–160 chars. */
+  title: string;
+  /** 1–4000 chars. */
+  description: string;
+  /** EUR, > 0. */
+  price: number;
+  /** 1–200 chars. */
+  address: string;
+  /** 1–80 chars. */
+  city: string;
+  /** 1–80 chars. */
+  country: string;
+  /** 0–20 integer. */
+  bedrooms: number;
+  /** 0–20 integer. */
+  bathrooms: number;
+  /** > 0. */
+  areaSqm: number;
+  propertyType: PropertyType;
+  /** Display-only feature tags, 0–10 items, each 1–80 chars. */
+  features: string[];
 }
 
 // ---------- AI Feature 1: Property Q&A ----------
@@ -132,4 +167,29 @@ export interface GenerateListingResponse {
   description: string;
   highlights: string[];
   targetAudience: string;
+}
+
+// ---------- AI Feature 3: Contextual Property Search ----------
+
+/**
+ * POST /api/ai/search-properties (authenticated, rate-limited).
+ * Free-text search across the current listings; the backend loads the
+ * candidate properties from the database and asks the AI to rank matches.
+ */
+export interface SearchPropertiesRequest {
+  /** 2–300 chars of free text, e.g. "bright flat near a park for a family". */
+  query: string;
+}
+
+export interface PropertySearchMatch {
+  property: PropertyDto;
+  /** One short sentence explaining why this listing matches the query. */
+  reason: string;
+}
+
+export interface SearchPropertiesResponse {
+  /** Ranked best-first; empty when nothing matches or the query is out of scope. */
+  matches: PropertySearchMatch[];
+  /** One or two sentences summarizing the result (or why there are no matches). */
+  summary: string;
 }

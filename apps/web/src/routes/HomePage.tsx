@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { AISearchBar } from '../features/ai/search/AISearchBar';
+import { AISearchResults } from '../features/ai/search/AISearchResults';
+import { useAISearch } from '../features/ai/search/useAISearch';
 import { EmptyState } from '../shared/components/EmptyState';
 import { ErrorState } from '../shared/components/ErrorState';
 import { FilterBar } from '../features/properties/FilterBar';
@@ -28,6 +31,8 @@ export function HomePage() {
     maxPrice: parseMaxPrice(debouncedMaxPrice),
   });
 
+  const aiSearch = useAISearch();
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -39,37 +44,58 @@ export function HomePage() {
 
       <PromoBanner />
 
+      <AISearchBar
+        query={aiSearch.query}
+        pending={aiSearch.status === 'loading'}
+        onQueryChange={aiSearch.setQuery}
+        onSubmit={aiSearch.handleSubmit}
+      />
+
       <FilterBar filters={filters} onChange={setFilters} />
 
-      {status === 'loading' && (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <PropertyCardSkeleton key={index} />
-          ))}
-        </div>
-      )}
-
-      {status === 'error' && (
-        <ErrorState
-          title="Couldn't load properties"
-          message={errorMessage ?? undefined}
-          onRetry={retry}
+      {aiSearch.active ? (
+        <AISearchResults
+          status={aiSearch.status}
+          query={aiSearch.submittedQuery}
+          summary={aiSearch.summary}
+          matches={aiSearch.matches}
+          errorMessage={aiSearch.errorMessage}
+          onRetry={aiSearch.retry}
+          onClear={aiSearch.clear}
         />
-      )}
+      ) : (
+        <>
+          {status === 'loading' && (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <PropertyCardSkeleton key={index} />
+              ))}
+            </div>
+          )}
 
-      {status === 'success' && items.length === 0 && (
-        <EmptyState
-          title="No properties match your filters"
-          message="Try widening your search criteria."
-        />
-      )}
+          {status === 'error' && (
+            <ErrorState
+              title="Couldn't load properties"
+              message={errorMessage ?? undefined}
+              onRetry={retry}
+            />
+          )}
 
-      {status === 'success' && items.length > 0 && (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((property) => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
+          {status === 'success' && items.length === 0 && (
+            <EmptyState
+              title="No properties match your filters"
+              message="Try widening your search criteria."
+            />
+          )}
+
+          {status === 'success' && items.length > 0 && (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {items.map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
