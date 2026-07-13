@@ -27,9 +27,11 @@ export function Header() {
           <NavLink to="/" end className={navClass}>
             Browse
           </NavLink>
-          <NavLink to="/generate" className={navClass}>
-            Generate
-          </NavLink>
+          {status === 'authenticated' && (
+            <NavLink to="/generate" className={navClass}>
+              Generate
+            </NavLink>
+          )}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
