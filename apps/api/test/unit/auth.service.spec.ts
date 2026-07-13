@@ -1,5 +1,5 @@
 import * as argon2 from 'argon2';
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Logger, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from '../../src/auth/auth.service';
 import { toAuthUserResponse } from '../../src/auth/auth.mapper';
 import { FakeUserRepository } from '../support/fake-user-repository';
@@ -61,6 +61,28 @@ describe('AuthService', () => {
       await expect(wrongPasswordAttempt).rejects.toThrow(UnauthorizedException);
       await expect(unknownEmailAttempt).rejects.toMatchObject({ message: 'Invalid email or password.' });
       await expect(wrongPasswordAttempt).rejects.toMatchObject({ message: 'Invalid email or password.' });
+    });
+
+    it('logs a login_failed audit event with no email or password on failure', async () => {
+      const usersRepo = new FakeUserRepository();
+      const passwordHash = await argon2.hash('correct-password');
+      usersRepo.seed(makeUser({ email: 'jane@example.com', passwordHash }));
+      const { service } = buildAuthService(usersRepo);
+      const logSpy = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+
+      await expect(service.login({ email: 'jane@example.com', password: 'wrong-password' })).rejects.toThrow(
+        UnauthorizedException,
+      );
+
+      const loggedLines = logSpy.mock.calls.map((call) => String(call[0]));
+      expect(loggedLines.some((line) => line.includes('auth.login_failed'))).toBe(true);
+      for (const line of loggedLines) {
+        expect(line).not.toContain('jane@example.com');
+        expect(line).not.toContain('wrong-password');
+        expect(line).not.toContain(passwordHash);
+      }
+
+      logSpy.mockRestore();
     });
 
     it('succeeds and signs a token for correct credentials', async () => {

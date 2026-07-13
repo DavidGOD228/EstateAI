@@ -123,6 +123,7 @@ export function RegisterForm({ from }: { from: string }) {
         error={errors.password}
         hint="At least 8 characters"
         disabled={pending}
+        maxLength={128}
         required
       />
 
@@ -138,6 +139,7 @@ export function RegisterForm({ from }: { from: string }) {
         }}
         error={errors.confirmPassword}
         disabled={pending}
+        maxLength={128}
         required
       />
 

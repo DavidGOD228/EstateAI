@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as argon2 from 'argon2';
@@ -20,6 +20,8 @@ const UNIQUE_VIOLATION_CODE = '23505';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
@@ -38,6 +40,7 @@ export class AuthService {
 
     try {
       const saved = await this.usersRepository.save(user);
+      this.logger.log(JSON.stringify({ event: 'auth.register_success', userId: saved.id }));
       return { user: saved, token: this.signToken(saved) };
     } catch (error) {
       // Race condition: two concurrent registrations for the same email both
@@ -53,14 +56,19 @@ export class AuthService {
     const user = await this.usersRepository.findOne({ where: { email: dto.email.toLowerCase() } });
     if (!user) {
       // Identical failure for unknown email or wrong password — no account enumeration.
+      // No identifying data logged here (no email, no password); request
+      // correlation comes from the requestId in the HTTP log line.
+      this.logger.log(JSON.stringify({ event: 'auth.login_failed' }));
       throw new UnauthorizedException(LOGIN_FAILURE_MESSAGE);
     }
 
     const passwordMatches = await argon2.verify(user.passwordHash, dto.password).catch(() => false);
     if (!passwordMatches) {
+      this.logger.log(JSON.stringify({ event: 'auth.login_failed' }));
       throw new UnauthorizedException(LOGIN_FAILURE_MESSAGE);
     }
 
+    this.logger.log(JSON.stringify({ event: 'auth.login_success', userId: user.id }));
     return { user, token: this.signToken(user) };
   }
 

@@ -16,6 +16,7 @@ import type {
   RegisterRequest,
   SearchPropertiesRequest,
   SearchPropertiesResponse,
+  UpdatePropertyRequest,
   UserDto,
 } from '@estateai/shared-types';
 import { request } from './client';
@@ -56,6 +57,21 @@ export function getProperty(id: string): Promise<PropertyDto> {
 
 export function createProperty(body: CreatePropertyRequest): Promise<PropertyDto> {
   return request<PropertyDto>('/api/properties', { method: 'POST', body });
+}
+
+// New endpoints added for owner edit/delete (approved extension — existing
+// functions above are untouched).
+
+export function updateProperty(id: string, body: UpdatePropertyRequest): Promise<PropertyDto> {
+  return request<PropertyDto>(`/api/properties/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body,
+  });
+}
+
+/** 204 No Content on success; `request` already returns `null` for empty bodies. */
+export function deleteProperty(id: string): Promise<void> {
+  return request<void>(`/api/properties/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
 
 // ---- AI ----

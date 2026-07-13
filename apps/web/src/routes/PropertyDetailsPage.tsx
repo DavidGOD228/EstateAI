@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { PropertyDto } from '@estateai/shared-types';
 import { PropertyQA } from '../features/ai/qa/PropertyQA';
+import { OwnerActions } from '../features/properties/OwnerActions';
 import { PropertyImagePlaceholder } from '../features/properties/PropertyImagePlaceholder';
 import { formatPrice } from '../features/properties/formatPrice';
 import * as api from '../shared/api/endpoints';
@@ -137,6 +138,8 @@ function PropertyDetailsContent({ property }: { property: PropertyDto }) {
         </div>
 
         <p className="text-3xl font-semibold text-emerald-700">{formatPrice(price)}</p>
+
+        {isOwn && <OwnerActions propertyId={id} />}
 
         <dl className="grid grid-cols-2 gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-4">
           <PropertySpec label="Bedrooms" value={bedrooms} />

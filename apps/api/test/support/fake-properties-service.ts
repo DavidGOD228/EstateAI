@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { CreatePropertyDto } from '../../src/properties/dto/create-property.dto';
+import { UpdatePropertyDto } from '../../src/properties/dto/update-property.dto';
 import { Property } from '../../src/properties/property.entity';
 import { PropertyFilters } from '../../src/properties/property-filters.interface';
 import { PropertyPage } from '../../src/properties/properties.service';
@@ -64,5 +65,17 @@ export class FakePropertiesService {
 
   async findRecent(limit: number): Promise<Property[]> {
     return [...this.rows].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, limit);
+  }
+
+  /** Mirrors `PropertiesService.update`: merges only defined fields, in place. */
+  async update(property: Property, dto: UpdatePropertyDto): Promise<Property> {
+    const definedFields = Object.fromEntries(Object.entries(dto).filter(([, value]) => value !== undefined));
+    Object.assign(property, definedFields, { updatedAt: new Date() });
+    return property;
+  }
+
+  /** Mirrors `PropertiesService.remove`. */
+  async remove(property: Property): Promise<void> {
+    this.rows = this.rows.filter((row) => row.id !== property.id);
   }
 }

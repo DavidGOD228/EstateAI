@@ -4,6 +4,7 @@ import { Layout } from './shared/components/Layout';
 import { NotFoundPage } from './routes/NotFoundPage';
 import { HomePage } from './routes/HomePage';
 import { PropertyDetailsPage } from './routes/PropertyDetailsPage';
+import { EditPropertyPage } from './routes/EditPropertyPage';
 import { CreatePage } from './routes/CreatePage';
 import { LoginPage } from './routes/LoginPage';
 import { RegisterPage } from './routes/RegisterPage';
@@ -15,6 +16,14 @@ export default function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/properties/:id" element={<PropertyDetailsPage />} />
+        <Route
+          path="/properties/:id/edit"
+          element={
+            <ProtectedRoute>
+              <EditPropertyPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/create"
           element={

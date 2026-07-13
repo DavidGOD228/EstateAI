@@ -10,7 +10,8 @@ Stack: React + Vite + TypeScript (frontend), NestJS + TypeORM + PostgreSQL (back
 `@langchain/anthropic` for the model calls, in a pnpm workspace monorepo.
 
 For the full architecture and design rationale, see [`docs/TECHNICAL_PLAN.md`](docs/TECHNICAL_PLAN.md). For the
-security self-assessment, see [`docs/OWASP_SELF_ASSESSMENT.md`](docs/OWASP_SELF_ASSESSMENT.md). For how this
+security self-assessment, see [`OWASP-README.md`](OWASP-README.md) (short reviewer guide) and
+[`docs/OWASP_SELF_ASSESSMENT.md`](docs/OWASP_SELF_ASSESSMENT.md) (full detail). For how this
 project was built with AI assistance, see [`docs/AI_WORKFLOW.md`](docs/AI_WORKFLOW.md).
 
 ---
@@ -106,9 +107,9 @@ a clear message instead of a silent misconfiguration. `.env.example` in the repo
 | `AI_MODEL` | Anthropic model id. Must be a current Claude model name — never hardcoded in code | No |
 | `ANTHROPIC_API_KEY` | Anthropic API key, used server-side only, never sent to the browser | Yes |
 | `AI_TIMEOUT_MS` | Timeout (ms) for each model call, default `20000` | No |
-| `AI_MAX_QUESTION_LENGTH` | Max characters for a Property Q&A question, default `500` | No |
-| `AI_MAX_OPTIONAL_FEATURES_LENGTH` | Max characters for generator optional features, default `1000` | No |
-| `AI_RATE_LIMIT_TTL_MS` / `AI_RATE_LIMIT_LIMIT` | Rate-limit window and request count for the AI endpoints | No |
+| `AI_RATE_LIMIT_TTL_MS` / `AI_RATE_LIMIT_LIMIT` | Per-user rate-limit window and request count for AI endpoints (default 60s / 10) | No |
+
+Input length caps (Q&A question 500 chars, generator optional features 1000 chars) are enforced in API DTO validators, not via env vars.
 
 ---
 
@@ -127,6 +128,8 @@ All endpoints are mounted under `/api`. Every error response shares one shape:
 | GET | `/api/properties` | — | List properties with optional `location`, `propertyType`, `minBedrooms`, `maxPrice` filters; `isOwn` is computed when a session cookie is present |
 | GET | `/api/properties/:id` | — | Property details by id |
 | POST | `/api/properties` | Cookie | Publish a user-created listing (marked `isOwn: true` for its owner) |
+| PATCH | `/api/properties/:id` | Cookie (owner) | Update a user-owned listing; `403` if not owner |
+| DELETE | `/api/properties/:id` | Cookie (owner) | Delete a user-owned listing; `204`; `403` if not owner |
 | POST | `/api/properties/:id/ask` | Cookie | Property Q&A: ask a question about one listing |
 | POST | `/api/ai/generate-listing` | Cookie | Smart Listing Generator: generate marketing copy from a form |
 | POST | `/api/ai/search-properties` | Cookie | AI contextual search: rank current listings against a free-text query |

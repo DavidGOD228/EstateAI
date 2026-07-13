@@ -4,10 +4,12 @@ export function ErrorState({
   title = 'Something went wrong',
   message,
   onRetry,
+  retryLabel = 'Try again',
 }: {
   title?: string;
   message?: string;
   onRetry?: () => void;
+  retryLabel?: string;
 }) {
   return (
     <div
@@ -32,7 +34,7 @@ export function ErrorState({
       {message && <p className="max-w-md text-sm text-slate-600">{message}</p>}
       {onRetry && (
         <Button variant="secondary" onClick={onRetry}>
-          Try again
+          {retryLabel}
         </Button>
       )}
     </div>

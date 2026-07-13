@@ -69,7 +69,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({ type: LogoutResponseDto })
   logout(@Res({ passthrough: true }) res: Response): LogoutResponseDto {
-    res.clearCookie(SESSION_COOKIE_NAME, { path: SESSION_COOKIE_PATH });
+    res.clearCookie(SESSION_COOKIE_NAME, this.baseCookieOptions());
     return { success: true };
   }
 
@@ -94,12 +94,23 @@ export class AuthController {
   private setSessionCookie(res: Response, token: string): void {
     const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN', '2h');
     const options: CookieOptions = {
+      ...this.baseCookieOptions(),
+      maxAge: parseDurationToMs(expiresIn),
+    };
+    res.cookie(SESSION_COOKIE_NAME, token, options);
+  }
+
+  /**
+   * Options shared between `res.cookie` (set) and `res.clearCookie` (clear).
+   * Browsers only reliably clear a cookie when the clearing attributes
+   * (httpOnly, sameSite, secure, path) match the ones it was set with.
+   */
+  private baseCookieOptions(): CookieOptions {
+    return {
       httpOnly: true,
       sameSite: 'lax',
       secure: this.configService.get<string>('NODE_ENV') === 'production',
       path: SESSION_COOKIE_PATH,
-      maxAge: parseDurationToMs(expiresIn),
     };
-    res.cookie(SESSION_COOKIE_NAME, token, options);
   }
 }

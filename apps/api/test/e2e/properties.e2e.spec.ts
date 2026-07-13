@@ -193,4 +193,132 @@ describe('Properties (e2e)', () => {
       expect(detailResponse.body).not.toHaveProperty('ownerId');
     });
   });
+
+  describe('PATCH /api/properties/:id', () => {
+    it('returns 401 when no session cookie is sent', async () => {
+      const property = makeProperty();
+      ctx.propertiesService.seed([property]);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/api/properties/${property.id}`)
+        .send({ title: 'New title' });
+
+      expect(response.status).toBe(401);
+    });
+
+    it('returns 403 when the authenticated user does not own the listing', async () => {
+      const { cookie } = await seedAuthenticatedUser(ctx);
+      const property = makeProperty({ ownerId: null });
+      ctx.propertiesService.seed([property]);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/api/properties/${property.id}`)
+        .set('Cookie', cookie)
+        .send({ title: 'New title' });
+
+      expect(response.status).toBe(403);
+    });
+
+    it('returns 403 for another authenticated user who owns a different listing', async () => {
+      const { user: owner } = await seedAuthenticatedUser(ctx, { email: 'owner4@example.com' });
+      const { cookie: otherCookie } = await seedAuthenticatedUser(ctx, { email: 'other4@example.com' });
+      const ownItem = await ctx.propertiesService.create(validCreateBody, owner.id);
+      ctx.propertiesService.seed([ownItem]);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/api/properties/${ownItem.id}`)
+        .set('Cookie', otherCookie)
+        .send({ title: 'New title' });
+
+      expect(response.status).toBe(403);
+    });
+
+    it('returns 404 for an unknown (but valid) UUID', async () => {
+      const { cookie } = await seedAuthenticatedUser(ctx);
+
+      const response = await request(app.getHttpServer())
+        .patch('/api/properties/00000000-0000-4000-8000-000000000000')
+        .set('Cookie', cookie)
+        .send({ title: 'New title' });
+
+      expect(response.status).toBe(404);
+    });
+
+    it('returns 400 for an invalid field value (title too long)', async () => {
+      const { user, cookie } = await seedAuthenticatedUser(ctx, { email: 'owner5@example.com' });
+      const ownItem = await ctx.propertiesService.create(validCreateBody, user.id);
+      ctx.propertiesService.seed([ownItem]);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/api/properties/${ownItem.id}`)
+        .set('Cookie', cookie)
+        .send({ title: 'x'.repeat(161) });
+
+      expect(response.status).toBe(400);
+    });
+
+    it('lets the owner update fields, returning isOwn: true and no ownerId leak', async () => {
+      const { user, cookie } = await seedAuthenticatedUser(ctx, { email: 'owner6@example.com' });
+      const ownItem = await ctx.propertiesService.create(validCreateBody, user.id);
+      ctx.propertiesService.seed([ownItem]);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/api/properties/${ownItem.id}`)
+        .set('Cookie', cookie)
+        .send({ title: 'Updated title', price: 300000 });
+
+      expect(response.status).toBe(200);
+      expect(response.body.title).toBe('Updated title');
+      expect(response.body.price).toBe(300000);
+      expect(response.body.isOwn).toBe(true);
+      expect(response.body).not.toHaveProperty('ownerId');
+      expect(response.body).not.toHaveProperty('externalRef');
+    });
+  });
+
+  describe('DELETE /api/properties/:id', () => {
+    it('returns 401 when no session cookie is sent', async () => {
+      const property = makeProperty();
+      ctx.propertiesService.seed([property]);
+
+      const response = await request(app.getHttpServer()).delete(`/api/properties/${property.id}`);
+
+      expect(response.status).toBe(401);
+    });
+
+    it('returns 403 when the authenticated user does not own the listing', async () => {
+      const { cookie } = await seedAuthenticatedUser(ctx);
+      const property = makeProperty({ ownerId: null });
+      ctx.propertiesService.seed([property]);
+
+      const response = await request(app.getHttpServer()).delete(`/api/properties/${property.id}`).set('Cookie', cookie);
+
+      expect(response.status).toBe(403);
+    });
+
+    it('returns 404 for an unknown (but valid) UUID', async () => {
+      const { cookie } = await seedAuthenticatedUser(ctx);
+
+      const response = await request(app.getHttpServer())
+        .delete('/api/properties/00000000-0000-4000-8000-000000000000')
+        .set('Cookie', cookie);
+
+      expect(response.status).toBe(404);
+    });
+
+    it('lets the owner delete their listing, returning 204 and no body, then 404 on a follow-up GET', async () => {
+      const { user, cookie } = await seedAuthenticatedUser(ctx, { email: 'owner7@example.com' });
+      const ownItem = await ctx.propertiesService.create(validCreateBody, user.id);
+      ctx.propertiesService.seed([ownItem]);
+
+      const deleteResponse = await request(app.getHttpServer()).delete(`/api/properties/${ownItem.id}`).set('Cookie', cookie);
+
+      expect(deleteResponse.status).toBe(204);
+      expect(deleteResponse.body).toEqual({});
+
+      const getResponse = await request(app.getHttpServer()).get(`/api/properties/${ownItem.id}`);
+
+      expect(getResponse.status).toBe(404);
+    });
+  });
 });

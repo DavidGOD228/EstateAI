@@ -18,6 +18,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       jwtFromRequest: extractJwtFromCookie,
       secretOrKey: configService.get<string>('JWT_SECRET') as string,
       ignoreExpiration: false,
+      // Prevents algorithm-confusion attacks by rejecting tokens signed with anything else.
+      algorithms: ['HS256'],
     });
   }
 

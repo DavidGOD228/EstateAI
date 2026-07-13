@@ -29,6 +29,7 @@ export function FilterBar({
         label="Location"
         placeholder="City or area"
         value={filters.location}
+        maxLength={120}
         onChange={handleLocation}
       />
       <Select label="Property type" value={filters.propertyType} onChange={handlePropertyType}>

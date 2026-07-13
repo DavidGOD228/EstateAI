@@ -1,14 +1,7 @@
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../features/auth/AuthContext';
 import { LoginForm } from '../features/auth/LoginForm';
-
-function resolveFrom(state: unknown): string {
-  if (state && typeof state === 'object' && 'from' in state) {
-    const from = (state as { from?: unknown }).from;
-    if (typeof from === 'string' && from.length > 0) return from;
-  }
-  return '/';
-}
+import { resolveSafeInternalPath } from '../features/auth/resolveSafeInternalPath';
 
 export function LoginPage() {
   const { status } = useAuth();
@@ -18,7 +11,7 @@ export function LoginPage() {
     return <Navigate to="/" replace />;
   }
 
-  const from = resolveFrom(location.state);
+  const from = resolveSafeInternalPath(location.state);
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-6 py-8 sm:py-12">

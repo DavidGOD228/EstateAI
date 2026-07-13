@@ -24,6 +24,8 @@ import { JwtStrategy } from './jwt.strategy';
         // strictly typed while still driven entirely by JWT_EXPIRES_IN.
         signOptions: {
           expiresIn: Math.floor(parseDurationToMs(config.get<string>('JWT_EXPIRES_IN', '2h')) / 1000),
+          // Prevents algorithm-confusion attacks by rejecting tokens signed with anything else.
+          algorithm: 'HS256',
         },
       }),
     }),

@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatePropertyDto } from './dto/create-property.dto';
+import { UpdatePropertyDto } from './dto/update-property.dto';
 import { PropertyFilters } from './property-filters.interface';
 import { Property } from './property.entity';
 
@@ -66,5 +67,21 @@ export class PropertiesService {
   /** Candidate pool for AI contextual search: most recent listings, capped. */
   async findRecent(limit: number): Promise<Property[]> {
     return this.propertiesRepository.find({ order: { createdAt: 'DESC' }, take: limit });
+  }
+
+  /**
+   * PATCH /api/properties/:id: ownership is already verified by the caller.
+   * Only fields present on `dto` (i.e. not `undefined`) are merged, so a
+   * partial payload never clobbers untouched columns.
+   */
+  async update(property: Property, dto: UpdatePropertyDto): Promise<Property> {
+    const definedFields = Object.fromEntries(Object.entries(dto).filter(([, value]) => value !== undefined));
+    Object.assign(property, definedFields);
+    return this.propertiesRepository.save(property);
+  }
+
+  /** DELETE /api/properties/:id: ownership is already verified by the caller. */
+  async remove(property: Property): Promise<void> {
+    await this.propertiesRepository.remove(property);
   }
 }

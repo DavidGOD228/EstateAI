@@ -23,8 +23,6 @@ export const envValidationSchema = Joi.object({
   AI_MODEL: Joi.string().required(),
   ANTHROPIC_API_KEY: Joi.string().min(1).required(),
   AI_TIMEOUT_MS: Joi.number().default(20000),
-  AI_MAX_QUESTION_LENGTH: Joi.number().default(500),
-  AI_MAX_OPTIONAL_FEATURES_LENGTH: Joi.number().default(1000),
   AI_RATE_LIMIT_TTL_MS: Joi.number().default(60000),
   AI_RATE_LIMIT_LIMIT: Joi.number().default(10),
 }).unknown(true);

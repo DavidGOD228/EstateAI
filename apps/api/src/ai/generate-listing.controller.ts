@@ -1,19 +1,22 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Logger, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AiService } from './ai.service';
 import { GenerateListingResponseDto } from './dto/generate-listing-response.dto';
 import { GenerateListingDto } from './dto/generate-listing.dto';
+import { UserThrottlerGuard } from './user-throttler.guard';
 
 /**
  * Endpoint 2: POST /api/ai/generate-listing (plan §18).
  */
 @ApiTags('ai')
 @Controller('ai')
-@UseGuards(JwtAuthGuard, ThrottlerGuard)
+@UseGuards(JwtAuthGuard, UserThrottlerGuard)
 @ApiBearerAuth()
 export class GenerateListingController {
+  private readonly logger = new Logger(GenerateListingController.name);
+
   constructor(private readonly aiService: AiService) {}
 
   @Post('generate-listing')
@@ -24,7 +27,10 @@ export class GenerateListingController {
   @ApiResponse({ status: 401, description: 'Missing or invalid authentication.' })
   @ApiResponse({ status: 429, description: 'Rate limit exceeded.' })
   @ApiResponse({ status: 503, description: 'AI assistant unavailable.' })
-  async generateListing(@Body() dto: GenerateListingDto): Promise<GenerateListingResponseDto> {
-    return this.aiService.generateListing(dto);
+  async generateListing(@Body() dto: GenerateListingDto, @Req() req: Request): Promise<GenerateListingResponseDto> {
+    const result = await this.aiService.generateListing(dto);
+    // Audit trail only: userId + outcome, never the request/response content (OWASP A09).
+    this.logger.log(JSON.stringify({ userId: req.user!.id, endpoint: 'POST /api/ai/generate-listing', outcome: 'success' }));
+    return result;
   }
 }

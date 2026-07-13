@@ -128,6 +128,13 @@ export interface CreatePropertyRequest {
   features: string[];
 }
 
+/**
+ * PATCH /api/properties/:id (authenticated, owner only) — partial update of a
+ * user-owned listing. Every field is optional; omitted fields are unchanged.
+ * Non-owners receive 403, unknown ids 404. Response: PropertyDto (isOwn: true).
+ */
+export type UpdatePropertyRequest = Partial<CreatePropertyRequest>;
+
 // ---------- AI Feature 1: Property Q&A ----------
 
 /** The client sends ONLY the question; the backend owns the property context. */

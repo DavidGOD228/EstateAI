@@ -24,7 +24,5 @@ process.env.AI_PROVIDER = 'anthropic';
 process.env.AI_MODEL = 'test-model';
 process.env.ANTHROPIC_API_KEY = 'test-key';
 process.env.AI_TIMEOUT_MS = '20000';
-process.env.AI_MAX_QUESTION_LENGTH = '500';
-process.env.AI_MAX_OPTIONAL_FEATURES_LENGTH = '1000';
 process.env.AI_RATE_LIMIT_TTL_MS = '60000';
 process.env.AI_RATE_LIMIT_LIMIT = '1000';

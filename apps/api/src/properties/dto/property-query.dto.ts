@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsNumber, IsOptional, IsPositive, IsString, Min, MinLength } from 'class-validator';
+import { IsIn, IsInt, IsNumber, IsOptional, IsPositive, IsString, MaxLength, Min, MinLength } from 'class-validator';
 import { PropertyType } from '../property.entity';
 
 export const PROPERTY_TYPES: PropertyType[] = ['apartment', 'house', 'studio', 'townhouse'];
@@ -10,6 +10,7 @@ export class PropertyQueryDto {
   @IsOptional()
   @IsString()
   @MinLength(1)
+  @MaxLength(120)
   location?: string;
 
   @ApiPropertyOptional({ enum: PROPERTY_TYPES })

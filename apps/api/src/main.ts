@@ -3,7 +3,7 @@ import cookieParser from 'cookie-parser';
 import { json, urlencoded } from 'express';
 import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -13,12 +13,31 @@ import { AllExceptionsFilter } from './common/all-exceptions.filter';
 import { LoggingInterceptor } from './common/logging.interceptor';
 import { RequestIdMiddleware } from './common/request-id.middleware';
 
+const bootstrapLogger = new Logger('Bootstrap');
+
+// Process-level safety nets: a rejection/exception here would otherwise crash
+// the process silently (unhandledRejection) or leave it in an undefined state
+// (uncaughtException). We log both; only the latter, which indicates a truly
+// unrecoverable state, terminates the process.
+process.on('unhandledRejection', (reason) => {
+  bootstrapLogger.error('Unhandled promise rejection', reason instanceof Error ? reason.stack : String(reason));
+});
+
+process.on('uncaughtException', (error) => {
+  bootstrapLogger.error('Uncaught exception', error.stack);
+  process.exit(1);
+});
+
 async function bootstrap(): Promise<void> {
   // Body parsing is set up manually below so we can enforce the 100kb limit.
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
   });
   const configService = app.get(ConfigService);
+
+  // TLS terminates at a reverse proxy in production; X-Forwarded-Proto must
+  // be trusted for `secure` cookies and correct client IPs for throttling.
+  app.set('trust proxy', 1);
 
   app.use(helmet());
   app.use(cookieParser(configService.get<string>('COOKIE_SECRET')));
@@ -29,6 +48,8 @@ async function bootstrap(): Promise<void> {
   app.use((req: Request, res: Response, next: NextFunction) => requestIdMiddleware.use(req, res, next));
 
   app.disable('x-powered-by');
+
+  app.enableShutdownHooks();
 
   app.setGlobalPrefix('api');
 

@@ -1,6 +1,5 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Logger, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { toPropertyResponse } from '../properties/dto/property-response.dto';
@@ -8,6 +7,7 @@ import { PropertiesService } from '../properties/properties.service';
 import { AiService } from './ai.service';
 import { PropertySearchMatchDto, SearchPropertiesResponseDto } from './dto/search-properties-response.dto';
 import { SearchPropertiesDto } from './dto/search-properties.dto';
+import { UserThrottlerGuard } from './user-throttler.guard';
 
 /** Candidate pool size loaded from the DB before ranking (plan-aligned cap). */
 const CANDIDATE_LIMIT = 50;
@@ -23,9 +23,11 @@ const MAX_MATCHES = 6;
  */
 @ApiTags('ai')
 @Controller('ai')
-@UseGuards(JwtAuthGuard, ThrottlerGuard)
+@UseGuards(JwtAuthGuard, UserThrottlerGuard)
 @ApiBearerAuth()
 export class SearchPropertiesController {
+  private readonly logger = new Logger(SearchPropertiesController.name);
+
   constructor(
     private readonly propertiesService: PropertiesService,
     private readonly aiService: AiService,
@@ -53,6 +55,8 @@ export class SearchPropertiesController {
         reason: match.reason,
       }));
 
+    // Audit trail only: userId + outcome, never the query/results content (OWASP A09).
+    this.logger.log(JSON.stringify({ userId: req.user!.id, endpoint: 'POST /api/ai/search-properties', outcome: 'success' }));
     return { matches, summary: result.summary };
   }
 }

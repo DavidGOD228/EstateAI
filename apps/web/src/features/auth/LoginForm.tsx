@@ -90,6 +90,7 @@ export function LoginForm({ from }: { from: string }) {
         }}
         error={errors.password}
         disabled={pending}
+        maxLength={128}
         required
       />
 

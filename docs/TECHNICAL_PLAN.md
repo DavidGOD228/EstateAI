@@ -481,9 +481,9 @@ Vite dev server proxies `/api` to `http://localhost:3001`, so cookies remain fir
 | `AI_MODEL` | Claude model name (Opus-class), never hardcoded | `your-claude-opus-model-name` |
 | `ANTHROPIC_API_KEY` | Anthropic key (server-only) | empty |
 | `AI_TIMEOUT_MS` | model call timeout | `20000` |
-| `AI_MAX_QUESTION_LENGTH` | Q&A input cap | `500` |
-| `AI_MAX_OPTIONAL_FEATURES_LENGTH` | generator input cap | `1000` |
-| `AI_RATE_LIMIT_TTL_MS` / `AI_RATE_LIMIT_LIMIT` | AI throttling | `60000` / `10` |
+| `AI_RATE_LIMIT_TTL_MS` / `AI_RATE_LIMIT_LIMIT` | per-user AI throttling | `60000` / `10` |
+
+Input length caps (Q&A 500 chars, generator optional features 1000 chars) are enforced in DTO validators, not env vars.
 
 All validated at startup via Joi schema. `.env.example` contains placeholders only; `.env` is gitignored.
 
