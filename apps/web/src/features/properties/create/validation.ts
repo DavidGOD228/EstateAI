@@ -10,6 +10,7 @@ import {
   MAX_ROOMS,
   MAX_TITLE_LENGTH,
 } from './types';
+import { containsProfanity, PROFANITY_VIOLATION_MESSAGE } from '../../../shared/utils/profanity';
 import type { DraftErrors, DraftValues } from './types';
 
 function isValidInteger(value: string, min: number, max: number): boolean {
@@ -34,6 +35,8 @@ export function validateDraft(values: DraftValues): DraftErrors {
     errors.title = 'Title is required.';
   } else if (title.length > MAX_TITLE_LENGTH) {
     errors.title = `Title must be ${MAX_TITLE_LENGTH} characters or fewer.`;
+  } else if (containsProfanity(title)) {
+    errors.title = PROFANITY_VIOLATION_MESSAGE;
   }
 
   const description = values.description.trim();
@@ -41,6 +44,8 @@ export function validateDraft(values: DraftValues): DraftErrors {
     errors.description = 'Description is required.';
   } else if (description.length > MAX_DESCRIPTION_LENGTH) {
     errors.description = `Description must be ${MAX_DESCRIPTION_LENGTH} characters or fewer.`;
+  } else if (containsProfanity(description)) {
+    errors.description = PROFANITY_VIOLATION_MESSAGE;
   }
 
   if (!isPositiveNumber(values.price)) {
@@ -68,6 +73,8 @@ export function validateDraft(values: DraftValues): DraftErrors {
     errors.address = 'Address is required.';
   } else if (address.length > MAX_ADDRESS_LENGTH) {
     errors.address = `Address must be ${MAX_ADDRESS_LENGTH} characters or fewer.`;
+  } else if (containsProfanity(address)) {
+    errors.address = PROFANITY_VIOLATION_MESSAGE;
   }
 
   const city = values.city.trim();
@@ -86,6 +93,8 @@ export function validateDraft(values: DraftValues): DraftErrors {
 
   if (values.features.length > MAX_FEATURES) {
     errors.features = `Keep it to ${MAX_FEATURES} feature tags or fewer.`;
+  } else if (values.features.some((feature) => containsProfanity(feature))) {
+    errors.features = PROFANITY_VIOLATION_MESSAGE;
   }
 
   return errors;
@@ -106,6 +115,9 @@ export function validateNewFeature(
   }
   if (existing.some((feature) => feature.toLowerCase() === trimmed.toLowerCase())) {
     return 'That feature is already in the list.';
+  }
+  if (containsProfanity(trimmed)) {
+    return PROFANITY_VIOLATION_MESSAGE;
   }
   return null;
 }

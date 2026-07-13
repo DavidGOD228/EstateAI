@@ -3,6 +3,7 @@ import { Transform } from 'class-transformer';
 import { ArrayMaxSize, IsArray, IsIn, IsInt, IsNumber, IsPositive, IsString, Length, Max, Min } from 'class-validator';
 import { PROPERTY_TYPES } from './property-query.dto';
 import { PropertyType } from '../property.entity';
+import { NoProfanity } from '../../common/profanity';
 
 const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 const trimEach = ({ value }: { value: unknown }): unknown =>
@@ -14,12 +15,14 @@ export class CreatePropertyDto {
   @IsString()
   @Transform(trim)
   @Length(1, 160)
+  @NoProfanity()
   title!: string;
 
   @ApiProperty({ minLength: 1, maxLength: 4000 })
   @IsString()
   @Transform(trim)
   @Length(1, 4000)
+  @NoProfanity()
   description!: string;
 
   @ApiProperty({ description: 'EUR, > 0.', example: 245000 })
@@ -31,6 +34,7 @@ export class CreatePropertyDto {
   @IsString()
   @Transform(trim)
   @Length(1, 200)
+  @NoProfanity()
   address!: string;
 
   @ApiProperty({ minLength: 1, maxLength: 80 })
@@ -72,5 +76,6 @@ export class CreatePropertyDto {
   @Transform(trimEach)
   @IsString({ each: true })
   @Length(1, 80, { each: true })
+  @NoProfanity({ each: true })
   features!: string[];
 }

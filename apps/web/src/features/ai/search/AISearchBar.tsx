@@ -8,11 +8,13 @@ import { MAX_QUERY_LENGTH, MIN_QUERY_LENGTH } from './constants';
 export function AISearchBar({
   query,
   pending,
+  validationError,
   onQueryChange,
   onSubmit,
 }: {
   query: string;
   pending: boolean;
+  validationError?: string | null;
   onQueryChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 }) {
@@ -50,6 +52,7 @@ export function AISearchBar({
           placeholder="Describe what you're looking for…"
           maxLength={MAX_QUERY_LENGTH}
           value={query}
+          error={validationError ?? undefined}
           disabled={pending}
           onChange={(event) => onQueryChange(event.target.value)}
         />

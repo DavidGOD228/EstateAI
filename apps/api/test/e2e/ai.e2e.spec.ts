@@ -170,6 +170,8 @@ describe('AI endpoints (e2e)', () => {
       ['negative price', { ...validBody, price: -100 }],
       ['bedrooms out of range', { ...validBody, bedrooms: 21 }],
       ['invalid tone', { ...validBody, tone: 'sarcastic' }],
+      ['profane optionalFeatures', { ...validBody, optionalFeatures: 'shitty neighbors but nice balcony' }],
+      ['profane location', { ...validBody, location: 'Bitchville, Tallinn' }],
     ])('returns 400 for an invalid body (%s)', async (_label, body) => {
       const { cookie } = await seedAuthenticatedUser(ctx);
 
@@ -242,6 +244,19 @@ describe('AI endpoints (e2e)', () => {
         .send({ query: 'a'.repeat(301) });
 
       expect(response.status).toBe(400);
+    });
+
+    it('returns 400 with a violation message for a profane query and never calls the provider', async () => {
+      const { cookie } = await seedAuthenticatedUser(ctx);
+
+      const response = await request(app.getHttpServer())
+        .post('/api/ai/search-properties')
+        .set('Cookie', cookie)
+        .send({ query: 'find me a fucking cheap flat' });
+
+      expect(response.status).toBe(400);
+      expect(JSON.stringify(response.body)).toContain('Please remove inappropriate language.');
+      expect(ctx.aiProvider.generate).not.toHaveBeenCalled();
     });
 
     it('returns 200 with ranked matches + reasons + summary for the mocked happy path', async () => {

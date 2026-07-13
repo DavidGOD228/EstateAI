@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsString, Length } from 'class-validator';
+import { NoProfanity } from '../../common/profanity';
 
 /** Mirrors `SearchPropertiesRequest` in packages/shared-types. */
 export class SearchPropertiesDto {
@@ -13,5 +14,6 @@ export class SearchPropertiesDto {
   @IsString()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @Length(2, 300)
+  @NoProfanity()
   query!: string;
 }

@@ -114,6 +114,9 @@ describe('Properties (e2e)', () => {
       ['missing title', (() => { const { title: _title, ...rest } = validCreateBody; return rest; })()],
       ['non-positive price', { ...validCreateBody, price: 0 }],
       ['11 features', { ...validCreateBody, features: Array.from({ length: 11 }, (_, i) => `feature-${i}`) }],
+      ['profane title', { ...validCreateBody, title: 'Shitty flat with a view' }],
+      ['profane description', { ...validCreateBody, description: 'No fucking parking though.' }],
+      ['profane feature tag', { ...validCreateBody, features: ['Balcony', 'dumbass neighbors'] }],
     ])('returns 400 for an invalid body (%s)', async (_label, body) => {
       const { cookie } = await seedAuthenticatedUser(ctx);
 

@@ -47,6 +47,7 @@ export function HomePage() {
       <AISearchBar
         query={aiSearch.query}
         pending={aiSearch.status === 'loading'}
+        validationError={aiSearch.validationError}
         onQueryChange={aiSearch.setQuery}
         onSubmit={aiSearch.handleSubmit}
       />

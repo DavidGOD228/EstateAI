@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import type { PropertySearchMatch } from '@estateai/shared-types';
 import { ApiError } from '../../../shared/api/client';
 import * as api from '../../../shared/api/endpoints';
+import { containsProfanity, PROFANITY_VIOLATION_MESSAGE } from '../../../shared/utils/profanity';
 import { MIN_QUERY_LENGTH } from './constants';
 
 export type AISearchStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -18,6 +19,8 @@ export interface AISearchState {
   summary: string | null;
   matches: PropertySearchMatch[];
   errorMessage: string | null;
+  /** Inline validation message for the query input (e.g. inappropriate language). */
+  validationError: string | null;
   setQuery: (value: string) => void;
   handleSubmit: (event: FormEvent<HTMLFormElement>) => void;
   retry: () => void;
@@ -32,6 +35,12 @@ export function useAISearch(): AISearchState {
   const [summary, setSummary] = useState<string | null>(null);
   const [matches, setMatches] = useState<PropertySearchMatch[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const updateQuery = useCallback((value: string) => {
+    setQuery(value);
+    setValidationError(null);
+  }, []);
 
   const runSearch = useCallback((trimmedQuery: string) => {
     setSubmittedQuery(trimmedQuery);
@@ -57,6 +66,10 @@ export function useAISearch(): AISearchState {
       if (status === 'loading') return;
       const trimmed = query.trim();
       if (trimmed.length < MIN_QUERY_LENGTH) return;
+      if (containsProfanity(trimmed)) {
+        setValidationError(PROFANITY_VIOLATION_MESSAGE);
+        return;
+      }
       runSearch(trimmed);
     },
     [query, status, runSearch],
@@ -74,6 +87,7 @@ export function useAISearch(): AISearchState {
     setSummary(null);
     setMatches([]);
     setErrorMessage(null);
+    setValidationError(null);
   }, []);
 
   return {
@@ -84,7 +98,8 @@ export function useAISearch(): AISearchState {
     summary,
     matches,
     errorMessage,
-    setQuery,
+    validationError,
+    setQuery: updateQuery,
     handleSubmit,
     retry,
     clear,

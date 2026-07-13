@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsIn, IsInt, IsNumber, IsOptional, IsPositive, IsString, Length, Max, MaxLength, Min } from 'class-validator';
+import { NoProfanity } from '../../common/profanity';
 
 export const PROPERTY_TYPES = ['apartment', 'house', 'studio', 'townhouse'] as const;
 export type GenerateListingPropertyType = (typeof PROPERTY_TYPES)[number];
@@ -12,6 +13,7 @@ export class GenerateListingDto {
   @ApiProperty({ description: 'Location / area of the property.', minLength: 1, maxLength: 120, example: 'Kadriorg, Tallinn' })
   @IsString()
   @Length(1, 120)
+  @NoProfanity()
   location!: string;
 
   @ApiProperty({ description: 'Asking price in EUR.', example: 245000 })
@@ -49,6 +51,7 @@ export class GenerateListingDto {
   @IsString()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @MaxLength(1000)
+  @NoProfanity()
   optionalFeatures?: string;
 
   @ApiPropertyOptional({ description: 'Copy tone. Defaults to "professional".', enum: TONES, example: 'professional' })
