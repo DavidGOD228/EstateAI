@@ -1,4 +1,14 @@
-import { Body, Controller, NotFoundException, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -23,6 +33,7 @@ export class AskController {
   ) {}
 
   @Post(':id/ask')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Ask a question about a specific property listing (authenticated, rate-limited).' })
   @ApiResponse({ status: 200, description: 'Structured, grounded answer.', type: AskQuestionResponseDto })
   @ApiResponse({ status: 400, description: 'Invalid property id or question.' })

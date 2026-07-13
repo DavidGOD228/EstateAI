@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -17,6 +17,7 @@ export class GenerateListingController {
   constructor(private readonly aiService: AiService) {}
 
   @Post('generate-listing')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Generate marketing copy for a property from structured form fields (authenticated, rate-limited).' })
   @ApiResponse({ status: 200, description: 'Structured marketing copy.', type: GenerateListingResponseDto })
   @ApiResponse({ status: 400, description: 'Invalid request body.' })

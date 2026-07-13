@@ -17,7 +17,8 @@ FROM deps AS build
 COPY apps/api ./apps/api
 COPY packages/shared-types ./packages/shared-types
 RUN pnpm --filter @estateai/api build
-RUN pnpm deploy --filter @estateai/api --prod /prod/api
+# --legacy: this workspace does not use injected dependencies (pnpm v10 default requires the flag)
+RUN pnpm deploy --legacy --filter @estateai/api --prod /prod/api
 
 # --- runtime: pruned prod node_modules + compiled dist only ---
 FROM node:20-alpine AS runtime
